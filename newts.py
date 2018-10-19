@@ -4,6 +4,10 @@ from utils import df, round_down, ValueType,decompose
 from cassandra.cluster import Cluster
 from cassandra.query import SimpleStatement
 
+# Newts constants - w/ default values
+CONTEXT = 'G'
+SHARD = 604800 # Match the value of the resource shard set in your install - see org.opennms.newts.config.resource_shard
+
 # Range of time which we wish to query
 end = datetime.datetime.now() # now
 start = end + datetime.timedelta(-30) # 30 days ago
@@ -17,10 +21,8 @@ cluster = Cluster(['127.0.0.1'])
 session = cluster.connect('newts')
 
 # First, let's find the resource ids for metrics related to the given node
-# select resource from terms where context='G' and field='_idx2' and value = '(snmp:fs:NODES,5)';
 MIN_RESOURCE_DEPTH = 4
 MAX_RESOURCE_DEPTH = 8
-CONTEXT = 'G'
 
 class Resource:
     def __init__(self, key):
@@ -47,15 +49,14 @@ for resource in resources:
 # Convert the times to timestamps expressed in seconds
 start_ts = time.mktime(start.timetuple())
 end_ts = time.mktime(end.timetuple())
-shard = 604800 # Match the value of the resource shard set in your install - see org.opennms.newts.config.resource_shard
 
 # Compute the partition keys
-first_partition = int(round_down(start_ts, shard))
-last_partition = int(round_down(end_ts, shard)) + shard
+first_partition = int(round_down(start_ts, SHARD))
+last_partition = int(round_down(end_ts, SHARD)) + SHARD
 
 partitions = []
-for partition in range(first_partition, last_partition, shard):
-    print("Partition: %d includes data from: %s, to %s" % (partition, df(partition), df(partition+shard)))
+for partition in range(first_partition, last_partition, SHARD):
+    print("Partition: %d includes data from: %s, to %s" % (partition, df(partition), df(partition+SHARD)))
     partitions.append(partition)
 
 # Gather the samples for every resource in every partition
