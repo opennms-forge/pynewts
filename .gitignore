@@ -1,0 +1,12 @@
+*.idea
+*.pyc
+
+.DS_Store
+
+venv
+
+db.sqlite3
+
+*.swp
+
+media
